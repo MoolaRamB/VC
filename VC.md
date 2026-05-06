@@ -3,6 +3,82 @@
 ## Overview
 This document outlines a flexible, compatible, and universal structure for verifiable credentials (VCs) enforced on agentic AI systems. Based on W3C Verifiable Credentials Data Model, it incorporates scopes for usage, permissions, and requirements to enable secure, interoperable agent interactions.
 
+## Visual Guide
+The diagrams below explain the VC structure, lifecycle roles, and the concrete contents of a credential and presentation.
+
+### Credential Anatomy
+<img src="vc.svg" alt="VC Concept Overview" width="680" style="max-width:100%;height:auto;background:#ffffff;border:1px solid #ddd;border-radius:8px;" />
+*Displays the credential envelope and its three main sections: metadata, claim(s), and proof(s). This helps readers understand the structure of a Verifiable Credential.*
+
+### Credential Lifecycle
+<img src="ecosystemdetail.svg" alt="VC Ecosystem" width="680" style="max-width:100%;height:auto;background:#ffffff;border:1px solid #ddd;border-radius:8px;" />
+*Shows the trust ecosystem for credentials, including issuer, holder, verifier, registry, and lifecycle actions such as issue, present, check status, revoke, and verify.*
+
+### Credential Payload Example
+<img src="credential_example.svg" alt="Credential Structure Example" width="680" style="max-width:100%;height:auto;background:#ffffff;border:1px solid #ddd;border-radius:8px;" />
+*Depicts a sample credential payload with issuer URI, credential subject identifier, claims such as name and alumniOf, issuance details, and the proof container.*
+
+### Presentation Structure
+<img src="presentation.svg" alt="Presentation Structure" width="680" style="max-width:100%;height:auto;background:#ffffff;border:1px solid #ddd;border-radius:8px;" />
+*Illustrates the Verifiable Presentation format, showing presentation metadata, wrapped Verifiable Credential(s), and corresponding proof(s).* 
+
+## Metadata and Lifecycle Details
+
+### Credential Metadata
+The label `Credential Metadata` represents the top-level fields that identify and version a credential. In practice these fields include:
+- `@context`: the JSON-LD context definitions
+- `id`: a globally unique credential identifier
+- `type`: credential types such as `VerifiableCredential` plus specialized profile names
+- `issuer`: the entity issuing the credential
+- `issuanceDate`: when the credential was created
+- `expirationDate`: when the credential expires
+- `credentialSchema`: optional schema reference for validation
+- `credentialStatus`: optional revocation or status endpoint reference
+
+Credential metadata is the part of the VC that tells verifiers what kind of credential it is, who issued it, when it is valid, and how to validate it.
+
+### Claim(s)
+The `Claim(s)` section contains the assertions about the subject. It is typically expressed as the `credentialSubject` object and includes:
+- `id`: the subject's identifier, often a DID or URI
+- subject-specific claims such as `name`, `alumniOf`, `role`, or `scope`
+- authorization claims like `permissions`, `resourceConstraints`, and `trustScore`
+- custom data needed by consuming systems
+
+A real-world claim payload looks like a structured object rather than free-form text, which allows verifiers to validate individual claims and apply policy checks.
+
+### Proof(s)
+The `Proof(s)` section is the cryptographic layer. It contains:
+- `type`: signature suite type such as `Ed25519Signature2020`
+- `created`: proof creation timestamp
+- `verificationMethod`: the key or DID used to sign
+- `proofPurpose`: usually `assertionMethod` or `authentication`
+- `proofValue` or `jws`: the signature material
+- optional `challenge` / `domain` values for presentation security
+
+Proofs are what make the credential verifiable: they prove the issuer actually signed the claims and that the data has not been altered.
+
+### Presentation Metadata
+`Presentation Metadata` is the wrapper around one or more credentials when a holder presents them to a verifier. It typically includes:
+- `@context`: context declarations for the presentation
+- `type`: includes `VerifiablePresentation`
+- `holder`: the entity presenting the credential(s)
+- `verifiableCredential`: an array of embedded credential objects
+- `proof`: a presentation-level proof that binds the holder to the presentation
+- optional `challenge` and `domain` fields for replay protection
+
+This metadata is what distinguishes a standalone credential from the act of presenting it in response to a request.
+
+### Lifecycle Actions in the Diagram
+The ecosystem diagram labels actions that describe how credentials move through their lifecycle:
+- `Issue` (exactly once): a credential is issued one time by the issuer and becomes bound to the subject.
+- `Present` (repeatable): the holder may present the credential to multiple verifiers repeatedly.
+- `Check Status` (might NOT preserve privacy, repeatable): verifiers may query status or revocation endpoints repeatedly; this step can expose usage metadata unless privacy protections are in place.
+- `Revoke` (up to once): the credential may be revoked by the issuer. Once revoked, that version is no longer valid.
+- `Verify` (repeatable): each presentation or use of the credential should be verified again, checking signature, issuer, status, and expiry.
+- `Delete` (up to once per holder): a holder can remove their local copy of a credential, which is a local privacy action.
+- `Transfer` (repeatable): if permitted, credentials or presentations can be shared or transferred across parties.
+
+
 ## Key Components
 
 ### 1. Credential Schema
@@ -404,155 +480,51 @@ Root (all scopes)
 ### Example 3: Administrative Policy Enforcement Credential
 ```json
 {
-  "@context": [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://w3id.org/security/data-integrity/v1",
-    "https://example.com/agent-vc-context/v2"
-  ],
+  "@context": ["https://www.w3.org/2018/credentials/v1", "https://example.com/agent-vc-context"],
+  "type": ["VerifiableCredential", "AgentAdministrativeCredential"],
   "id": "urn:uuid:7b9e55ff-aaba-5e6c-caff-9fcaba3903e7",
-  "type": [
-    "VerifiableCredential",
-    "AgentAdministrativeCredential"
-  ],
   "issuer": "did:example:organization:root",
   "issuanceDate": "2026-05-01T00:00:00Z",
   "expirationDate": "2027-05-01T00:00:00Z",
-
-  "credentialStatus": {
-    "id": "https://example.com/status/7b9e55ff",
-    "type": "StatusList2021Entry",
-    "statusPurpose": "revocation",
-    "statusListIndex": "94567",
-    "statusListCredential": "https://example.com/status-list"
-  },
-
   "credentialSubject": {
     "id": "did:example:agent:admin-001",
-    "name": "Admin Agent Credential",
-    "version": "2.0",
     "agentType": "AdminAgent",
-
-    "capabilities": [
-      {
-        "action": "system.create",
-        "level": 4
-      },
-      {
-        "action": "system.update",
-        "level": 4
-      },
-      {
-        "action": "system.deploy",
-        "level": 4
-      },
-      {
-        "action": "policy.modify",
+    "scope": ["system_admin", "credential_management", "policy_enforcement"],
+    "permissions": {
+      "system_admin": {
         "level": 4,
-        "requiresApproval": true
+        "actions": ["create", "update", "deploy", "modify_policy", "allocate_resources"],
+        "restrictions": ["cannot_delete_audit_logs", "cannot_modify_root_policy"]
       },
-      {
-        "action": "resource.allocate",
-        "level": 4
-      },
-      {
-        "action": "credential.issue",
-        "level": 4
-      },
-      {
-        "action": "credential.revoke",
+      "credential_management": {
         "level": 4,
-        "requiresApproval": true
+        "actions": ["issue", "revoke", "delegate", "rotate_keys"],
+        "requiresApproval": ["revoke", "rotate_keys"],
+        "approverCount": 2
       },
-      {
-        "action": "credential.rotate_keys",
+      "monitoring": {
         "level": 4,
-        "requiresApproval": true
-      },
-      {
-        "action": "monitor.logs.view",
-        "level": 4
-      },
-      {
-        "action": "monitor.metrics.view",
-        "level": 4
-      },
-      {
-        "action": "monitor.compliance.generate",
-        "level": 4
-      },
-      {
-        "action": "incident.trigger_response",
-        "level": 4
-      }
-    ],
-
-    "approvalPolicy": {
-      "defaultApprovalsRequired": 2,
-      "rules": [
-        {
-          "action": "credential.revoke",
-          "approvalsRequired": 2
-        },
-        {
-          "action": "credential.rotate_keys",
-          "approvalsRequired": 2
-        },
-        {
-          "action": "policy.modify",
-          "approvalsRequired": 2
-        }
-      ]
-    },
-
-    "constraints": {
-      "resource": {
-        "cpu": {
-          "limit": "50%",
-          "scope": "per_node"
-        },
-        "memory": {
-          "limitMB": 4096
-        }
-      },
-      "operational": {
-        "unlimitedCriticalOperations": true
+        "actions": ["view_logs", "view_metrics", "generate_compliance_reports", "trigger_incident_response"]
       }
     },
-
-    "trust": {
-      "score": 0.98,
-      "minRequired": 0.95,
-      "evaluatedAt": "2026-05-01T00:00:00Z",
-      "method": "behavioral_v1",
-      "issuer": "did:example:trust-service"
+    "resourceConstraints": {
+      "cpu_percent": 50,
+      "memory_mb": 4096,
+      "unlimited_critical_operations": true
     },
-
-    "security": {
+    "trustScore": 0.98,
+    "requirements": {
+      "minTrustScore": 0.95,
       "mfaRequired": true,
-      "audience": [
-        "did:example:system:cluster-1"
-      ],
-      "nonce": "b7f3c9a8e4d24f1a9c6e7d5b8a1f0c3d"
+      "requiresApproval": ["policy_modification", "credential_revocation"],
+      "approvalThreshold": 2
     },
-
-    "policies": [
-      {
-        "condition": "trust.score < 0.6",
-        "action": "credential.revoke"
-      },
-      {
-        "condition": "constraints.resource.cpu.limit > 50%",
-        "action": "deny_execution"
-      }
-    ],
-
-    "audit": {
-      "enabled": true,
-      "logEndpoint": "https://example.com/audit",
-      "traceId": "trace-12345"
+    "policies": {
+      "revokeAgentIfTrustBelow": 0.6,
+      "enforceQuotas": true,
+      "enforceAuditLogging": true
     }
   },
-
   "proof": {
     "type": "Ed25519Signature2020",
     "created": "2026-05-01T00:00:00Z",
