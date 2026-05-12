@@ -1,0 +1,58 @@
+{
+  "@context": {
+    "@version": 1.1,
+
+    "id": "@id",
+    "type": "@type",
+
+    "AgentCapabilityCredential": "https://agentvc.org/vocab#AgentCapabilityCredential",
+
+    "agentProfile": {
+      "@id": "https://agentvc.org/vocab#agentProfile",
+      "@context": {
+        "name": "https://schema.org/name",
+        "version": "https://schema.org/version",
+        "model": "https://agentvc.org/vocab#model"
+      }
+    },
+
+    "capabilities": {
+      "@id": "https://agentvc.org/vocab#capabilities",
+      "@container": "@set"
+    },
+
+    "actions": {
+      "@id": "https://agentvc.org/vocab#actions",
+      "@container": "@set"
+    },
+
+    "constraints": {
+      "@id": "https://agentvc.org/vocab#constraints"
+    },
+
+    "allowedDomains": {
+      "@id": "https://agentvc.org/vocab#allowedDomains",
+      "@container": "@set"
+    },
+
+    "rateLimit": {
+      "@id": "https://agentvc.org/vocab#rateLimit"
+    },
+
+    "maxExecutionTimeMs": {
+      "@id": "https://agentvc.org/vocab#maxExecutionTimeMs"
+    },
+
+    "sandboxPolicy": {
+      "@id": "https://agentvc.org/vocab#sandboxPolicy"
+    },
+
+    "delegationPolicy": {
+      "@id": "https://agentvc.org/vocab#delegationPolicy"
+    },
+
+    "humanApprovalPolicy": {
+      "@id": "https://agentvc.org/vocab#humanApprovalPolicy"
+    }
+  }
+}
