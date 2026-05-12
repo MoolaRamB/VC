@@ -45,7 +45,7 @@ func main() {
 	Issuer: issuerDID,
 
 	ValidFrom:  time.Now().UTC().Format(time.RFC3339),
-	ValidUntil: time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339),
+	ValidUntil: time.Now().UTC().Add(1 * time.Minute).Format(time.RFC3339),
 
 	CredentialSubject: shared.CredentialSubject{
 		ID: "did:key:z6MkResearchAgent01",

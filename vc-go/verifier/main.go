@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"vc-go/shared"
 )
@@ -22,8 +23,8 @@ func main() {
     "AgentCapabilityCredential"
   ],
   "issuer": "did:key:issuerEnsurity",
-  "validFrom": "2026-05-12T12:43:54Z",
-  "validUntil": "2026-05-13T12:43:54Z",
+  "validFrom": "2026-05-12T13:06:25Z",
+  "validUntil": "2026-05-12T13:07:25Z",
   "credentialSubject": {
     "id": "did:key:z6MkResearchAgent01",
     "agentProfile": {
@@ -109,22 +110,35 @@ func main() {
   },
   "proof": {
     "type": "Ed25519Signature2020",
-    "cryptosuite": "",
-    "created": "2026-05-12T18:13:54+05:30",
+    "created": "2026-05-12T18:36:25+05:30",
     "verificationMethod": "did:key:issuerEnsurity#key-1",
     "proofPurpose": "assertionMethod",
-    "proofValue": "V2PmFGS3D9nKCRk52l8YMMvIH6YvU1kv8EfmGTDM+na+M+YpHfGwbbcyZQcF68QEgiVc0KtwHFv/aq57nZDEBg=="
+    "proofValue": "Q8hikoBQ/JcB2JsEn3CgkqUx4ikBIHg3FwQh/+T8fSRPEG7x13fFmfg4AdWh9AtrDrcprqZmDLuOOZAAqEyFCg=="
   }
 }`
 
 	//  Paste issuer public key
-	pubKeyBase64 := "MY6J2z2SuS8zFEMhNJwYmYAm9H1NmHPY8Kj1ApqSWNo="
+	pubKeyBase64 := "ejXIuQGQvz8wCmt3poeuSB9R6mkPVGPawSqLCpScpFY="
 
 	pubKeyBytes, _ := base64.StdEncoding.DecodeString(pubKeyBase64)
 	publicKey := ed25519.PublicKey(pubKeyBytes)
 
 	var cred shared.AgentCapabilityCredential
 	json.Unmarshal([]byte(vcJSON), &cred)
+
+	// Check validity period
+	now := time.Now().UTC()
+	validFrom, _ := time.Parse(time.RFC3339, cred.ValidFrom)
+	validUntil, _ := time.Parse(time.RFC3339, cred.ValidUntil)
+
+	if now.Before(validFrom) {
+		fmt.Println("❌ Credential is not yet valid")
+		return
+	}
+	if now.After(validUntil) {
+		fmt.Println("❌ Credential has expired")
+		return
+	}
 
 	// Remove proof before verification
 	proof := cred.Proof
@@ -137,8 +151,8 @@ func main() {
 	valid := ed25519.Verify(publicKey, unsignedBytes, sigBytes)
 
 	if valid {
-		fmt.Println(" Credential is VALID")
+		fmt.Println("✅ Credential is VALID")
 	} else {
-		fmt.Println(" Credential is INVALID")
+		fmt.Println("❌ Credential is INVALID")
 	}
 }

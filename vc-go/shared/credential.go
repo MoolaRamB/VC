@@ -127,7 +127,6 @@ type TermsOfUse struct {
 // Linked Data Proof
 type Proof struct {
 	Type               string `json:"type"`
-	Cryptosuite        string `json:"cryptosuite"`
 	Created            string `json:"created"`
 	VerificationMethod string `json:"verificationMethod"`
 	ProofPurpose       string `json:"proofPurpose"`
